@@ -43,11 +43,9 @@ var Worf = {
   
   decode: function(data) {
     var header = this.parseHeader(data);
-    console.log(header);
     var directory = this.parseTableDirectory(header, data);
-    console.log(directory);
-    var tables = this.readTables(data, directory)
-    // console.log(tables);
+    var tables = this.readTables(data, directory);
+    return {header: header, directory: directory, tables: tables};
   },
   
   parseHeader: function(data) {
