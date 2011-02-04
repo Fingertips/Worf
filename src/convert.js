@@ -1,18 +1,10 @@
 var Worf = {
   load: function(url, callback) {
     var request = new XMLHttpRequest();
-    if (callback) {
-      request.onreadystatechange = function() {
-        if (request.readyState == 4)
-          callback(Worf.stringToByteArray(request.responseText));
-      };
-    }
     request.overrideMimeType('text/plain; charset=x-user-defined');
     request.open('GET', url, (callback && true));
     request.send(null);
-    if (!callback) {
-      return Worf.stringToByteArray(request.responseText);
-    }
+    return Worf.stringToByteArray(request.responseText);
   },
   
   fromUint16: function(data) {
@@ -67,7 +59,7 @@ var Worf = {
   
   woffToSfnt: function(data) {
     var sfntHeader = [];
-    var sfntData = [];
+    var sfntData = '';
     var woffDirectory = {};
     var entries = this.fromUint16(data.slice(12, 14));
     var lowestPower = this.lowestPower(entries);
@@ -114,12 +106,12 @@ var Worf = {
       
       if (sfntTableSize > woffDataCompressedSize) {
         var unpacked = (new JXG.Util.Unzip(byteArray)).unzip();
-        sfntData.push(unpacked[0][0]); // Bad data breaks at this line
+        sfntData += unpacked[0][0]; // Bad data breaks at this line
       } else {
-        sfntData.push(this.byteArrayToString(byteArray));
+        sfntData += this.byteArrayToString(byteArray);
       }
       // Write zero bytes as padding
-      for (var index = 0; index < sfntTablePadding; index++) { sfntData.push(0) };
+      for (var index = 0; index < sfntTablePadding; index++) { sfntData += String.fromCharCode(0); };
     }
     
     // Write the table directory
@@ -137,11 +129,6 @@ var Worf = {
       sfntHeader = sfntHeader.concat(this.toUint32(entry.length));
     }
     
-    // Write everything to a string and return it
-    var buffer = this.byteArrayToString(sfntHeader);
-    for (var index = 0; index < sfntData.length; index++) {
-      buffer += sfntData[index];
-    }
-    return buffer;
+    return this.byteArrayToString(sfntHeader) + sfntData;
   }
 }
