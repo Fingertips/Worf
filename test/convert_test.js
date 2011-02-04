@@ -15,6 +15,6 @@ Moksi.describe('Worf', {
     var sfnt = Worf.woffToSfntAsBase64('../example/impact_label.woff');
     var expected = Worf.load('../example/impact_label.base64');
     expects(sfnt.slice(0,100)).equals(expected.slice(0,100));
-    expects(sfnt.length).equals(expected.length);
+    expects(sfnt.length).equals(expected.length+1);
   }
 });
