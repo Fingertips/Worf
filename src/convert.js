@@ -2,9 +2,9 @@ var Worf = {
   load: function(url, callback) {
     var request = new XMLHttpRequest();
     request.overrideMimeType('text/plain; charset=x-user-defined');
-    request.open('GET', url, (callback && true));
+    request.open('GET', url, false);
     request.send(null);
-    return Worf.stringToByteArray(request.responseText);
+    return request.responseText;
   },
   
   fromUint16: function(data) {
@@ -49,66 +49,61 @@ var Worf = {
     return buffer;
   },
   
-  byteArrayToString: function(byteArray) {
-    var buffer = ''
-    for(var index = 0; index < byteArray.length; index++) {
-      buffer += String.fromCharCode(byteArray[index]);
-    }
-    return buffer;
+  cleanup: function(data) {
+    return String.fromCharCode.apply(this, this.stringToByteArray(data));
   },
   
   woffToSfnt: function(data) {
     var sfntHeader = [];
     var sfntData = '';
     var woffDirectory = {};
-    var entries = this.fromUint16(data.slice(12, 14));
+    var entries = this.fromUint16(this.stringToByteArray(data.slice(12, 14)));
     var lowestPower = this.lowestPower(entries);
+    var woffHeader = this.stringToByteArray(data.slice(0,44));
     
-    // uint32_t version;
-    sfntHeader = sfntHeader.concat(data.slice(4, 8));
-    // uint16_t numTables;
-    sfntHeader = sfntHeader.concat(data.slice(12, 14));
-    // uint16_t searchRange;
-    sfntHeader = sfntHeader.concat(this.toUint16(lowestPower*16));
-    // uint16_t entrySelector;
-    sfntHeader = sfntHeader.concat(this.toUint16(Math.log(lowestPower) / Math.LN2));
-    // uint16_t rangeShift;
-    sfntHeader = sfntHeader.concat(this.toUint16((entries * 16) - (lowestPower * 16)));
+    sfntHeader = sfntHeader.concat(woffHeader.slice(4, 8)); // version
+    sfntHeader = sfntHeader.concat(woffHeader.slice(12, 14)); // numTables
+    sfntHeader = sfntHeader.concat(this.toUint16(lowestPower*16)); // searchRange;
+    sfntHeader = sfntHeader.concat(this.toUint16(Math.log(lowestPower) / Math.LN2)) // entrySelector
+    sfntHeader = sfntHeader.concat(this.toUint16((entries * 16) - (lowestPower * 16))); // rangeShift
     
     // sfntHeader header is 12 bytes and a table directory entry is 16 bytes
     var sfntDataOffset = 12 + (entries * 16);
     var sfntTag, rawSfntTag, woffEntryOffset, sfntTableSize, sfntTablePadding;
     var directoryKeys = [];
+    var woffEntry;
     
     // Collect all table directory entries so we can sort them and write them out
     for (var entryIndex = 0; entryIndex < entries; entryIndex++) {
+      
       // WOFF header is 44 bytes and a table directory entry is 20 bytes
       woffEntryOffset = 44 + (entryIndex * 20);
-      sfntTableSize = this.fromUint32(data.slice(woffEntryOffset+12, woffEntryOffset+16));
-      rawSfntTag = data.slice(woffEntryOffset, woffEntryOffset+4)
+      woffEntry = this.stringToByteArray(data.slice(woffEntryOffset, woffEntryOffset+20));
+      
+      sfntTableSize = this.fromUint32(woffEntry.slice(12, 16)); // size
+      rawSfntTag = woffEntry.slice(0, 4)
       sfntTag = this.fromUint32(rawSfntTag);
       
       woffDirectory[sfntTag] = {};
       woffDirectory[sfntTag].rawTag = rawSfntTag;
       woffDirectory[sfntTag].woffEntryOffset = woffEntryOffset;
-      woffDirectory[sfntTag].checksum = data.slice(woffEntryOffset+16, woffEntryOffset+20);
+      woffDirectory[sfntTag].checksum = woffEntry.slice(16, 20); // checksum
       woffDirectory[sfntTag].offset = sfntDataOffset;
       woffDirectory[sfntTag].length = sfntTableSize;
       directoryKeys.push(sfntTag);
       
-      // Increment the offset counter for the next entry and add alignment whitespace
+      // Increment the offset counter for the next entry and add 4-byte alignment whitespace
       sfntTablePadding = (Math.ceil(sfntTableSize / 4.0) * 4) - sfntTableSize;
       sfntDataOffset += sfntTableSize + sfntTablePadding;
       
-      var woffDataOffset = this.fromUint32(data.slice(woffEntryOffset+4, woffEntryOffset+8));
-      var woffDataCompressedSize = this.fromUint32(data.slice(woffEntryOffset+8, woffEntryOffset+12));
-      var byteArray = data.slice(woffDataOffset, woffDataOffset + woffDataCompressedSize);
+      var woffDataOffset = this.fromUint32(woffEntry.slice(4, 8)); // offset
+      var woffDataCompressedSize = this.fromUint32(woffEntry.slice(8, 12)); // compSize
       
       if (sfntTableSize > woffDataCompressedSize) {
-        var unpacked = (new JXG.Util.Unzip(byteArray)).unzip();
+        var unpacked = (new JXG.Util.Unzip(this.stringToByteArray(data.slice(woffDataOffset, woffDataOffset + woffDataCompressedSize)))).unzip();
         sfntData += unpacked[0][0]; // Bad data breaks at this line
       } else {
-        sfntData += this.byteArrayToString(byteArray);
+        sfntData += this.cleanup(data.slice(woffDataOffset, woffDataOffset + woffDataCompressedSize));
       }
       // Write zero bytes as padding
       for (var index = 0; index < sfntTablePadding; index++) { sfntData += String.fromCharCode(0); };
@@ -119,16 +114,12 @@ var Worf = {
     directoryKeys = directoryKeys.sort();
     for (var entryIndex = 0; entryIndex < directoryKeys.length; entryIndex++) {
       entry = woffDirectory[directoryKeys[entryIndex]];
-      // uint32_t tag;
-      sfntHeader = sfntHeader.concat(entry.rawTag);
-      // uint32_t checksum;
-      sfntHeader = sfntHeader.concat(entry.checksum);
-      // uint32_t offset;
-      sfntHeader = sfntHeader.concat(this.toUint32(entry.offset));
-      // uint32_t length;
-      sfntHeader = sfntHeader.concat(this.toUint32(entry.length));
+      sfntHeader = sfntHeader.concat(entry.rawTag); // tag
+      sfntHeader = sfntHeader.concat(entry.checksum); // checksum
+      sfntHeader = sfntHeader.concat(this.toUint32(entry.offset)); // offset
+      sfntHeader = sfntHeader.concat(this.toUint32(entry.length)); // length
     }
     
-    return this.byteArrayToString(sfntHeader) + sfntData;
+    return String.fromCharCode.apply(this, sfntHeader) + sfntData;
   }
 }
