@@ -1,21 +1,18 @@
 var Worf = {
-  // Set to true to debug
-  debug: false,
-  
   load: function(url, callback) {
     var request = new XMLHttpRequest();
-    request.onreadystatechange = function() {
-      if (request.readyState == 4) {
-        var index  = 0;
-        var buffer = [];
-        while(index < request.responseText.length)
-          buffer[index] = request.responseText.charCodeAt(index++) & 0xff;
-        callback(buffer);
-      }
-    };
-    request.open('GET', url, true);
+    if (callback) {
+      request.onreadystatechange = function() {
+        if (request.readyState == 4)
+          callback(Worf.stringToByteArray(request.responseText));
+      };
+    }
     request.overrideMimeType('text/plain; charset=x-user-defined');
+    request.open('GET', url, (callback && true));
     request.send(null);
+    if (!callback) {
+      return Worf.stringToByteArray(request.responseText);
+    }
   },
   
   fromUint16: function(data) {
@@ -35,9 +32,11 @@ var Worf = {
   },
   
   woffToSfntAsBase64: function(src, callback) {
-    this.load(src, function(data) {
-      callback(JXG.Util.Base64.encode(Worf.woffToSfnt(data)));
-    });
+    var oldFunction = JXG.Util.Base64._utf8_encode;
+    JXG.Util.Base64._utf8_encode = function(data) { return data; }
+    var encoded = JXG.Util.Base64.encode(Worf.woffToSfnt(this.load(src)));
+    JXG.Util.Base64._utf8_encode = oldFunction;
+    return encoded;
   },
   
   lowestPower: function(entries) {
@@ -48,6 +47,14 @@ var Worf = {
     lowestPower |= (lowestPower >> 8);
     lowestPower &= ~(lowestPower >> 1);
     return lowestPower;
+  },
+  
+  stringToByteArray: function(data) {
+    var index  = 0;
+    var buffer = [];
+    while(index < data.length)
+      buffer[index] = data.charCodeAt(index++) & 0xff;
+    return buffer;
   },
   
   byteArrayToString: function(byteArray) {
@@ -108,7 +115,6 @@ var Worf = {
       if (sfntTableSize > woffDataCompressedSize) {
         var unpacked = (new JXG.Util.Unzip(byteArray)).unzip();
         sfntData.push(unpacked[0][0]); // Bad data breaks at this line
-        sfntData.push(unpacked[0][0].length)
       } else {
         sfntData.push(this.byteArrayToString(byteArray));
       }

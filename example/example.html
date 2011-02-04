@@ -3,11 +3,18 @@
   <head>
     <meta charset="UTF-8">
     <title>Worf example</title>
+    <script type="text/javascript" src="../src/jsxcompressor.js"></script>
+    <script type="text/javascript" src="../src/convert.js"></script>
+    <script type="text/javascript">
+      
+      var data = Worf.woffToSfntAsBase64('impact_label.woff');
+      document.write("<style>@font-face {font-family: 'Label';src: url(//:) format('no404'), url(data:font/truetype;charset=utf-8;base64,"+data+") format('truetype');font-weight: normal;font-style: normal;}</style>");
+    </script>
+    <style>
+      body { font-family: Label, serif; }
+    </style>
   </head>
   <body>
-    <p>The lazy Link jumped over the river</p>
-    <script type="text/javascript" src="../src/jsxcompressor.js"></script>
-    <script type="text/javascript" src="../src/worf.js"></script>
-    <script type="text/javascript">Worf.use('impact_label.woff')</script>
+    <h1>The lazy Link jumped over the river</h1>
   </body>
 </html>
