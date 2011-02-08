@@ -1,6 +1,6 @@
 var Worf = {
   powers: [16777216, 65536, 256, 1],
-  debug: false,
+  debug: false,  
   
   use: function(src) {
     this.load(src, function(data) {

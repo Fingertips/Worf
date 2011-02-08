@@ -1,10 +1,30 @@
 var Worf = {
+  define: function(url, rules) {
+    Worf.woffToSfntAsBase64(url, function(base64, format) {
+      var declaration = Worf.fontFaceDeclaration(rules, base64, format);
+      var style = document.createElement('style');
+      style.innerHTML = declaration;
+      document.head.appendChild(style);
+    });
+  },
+  
+  fontFaceDeclaration: function(rules, data, format) {
+    return "@font-face {                                                                                         \
+      src: url(//:) format('no404'), url(data:font/"+format+";charset=utf-8;base64,"+data+") format("+format+"); \
+      "+rules+"                                                                                                  \
+    }";
+  },
+  
   load: function(url, callback) {
     var request = new XMLHttpRequest();
     request.overrideMimeType('text/plain; charset=x-user-defined');
-    request.open('GET', url, false);
+    request.onreadystatechange = function() {
+      if (request.readyState == 4) {
+        callback(request.responseText);
+      }
+    };
+    request.open('GET', url, true);
     request.send(null);
-    return request.responseText;
   },
   
   fromUint16: function(data) {
@@ -24,11 +44,13 @@ var Worf = {
   },
   
   woffToSfntAsBase64: function(src, callback) {
-    var oldFunction = JXG.Util.Base64._utf8_encode;
-    JXG.Util.Base64._utf8_encode = function(data) { return data; }
-    var encoded = JXG.Util.Base64.encode(Worf.woffToSfnt(this.load(src)));
-    JXG.Util.Base64._utf8_encode = oldFunction;
-    return encoded;
+    this.load(src, function(woff) {
+      var oldFunction = JXG.Util.Base64._utf8_encode;
+      JXG.Util.Base64._utf8_encode = function(data) { return data; }
+      var encoded = JXG.Util.Base64.encode(Worf.woffToSfnt(woff));
+      JXG.Util.Base64._utf8_encode = oldFunction;
+      callback(encoded, Worf.woffFlavor(woff));
+    });
   },
   
   lowestPower: function(entries) {
@@ -51,6 +73,18 @@ var Worf = {
   
   cleanup: function(data) {
     return String.fromCharCode.apply(this, this.stringToByteArray(data));
+  },
+  
+  woffFlavor: function(data) {
+    var flavor = this.fromUint32(this.stringToByteArray(data.slice(4, 8)));
+    switch(flavor) {
+      case 0x00010000:
+        return 'truetype';
+      case 0x4f54544f:
+        return 'opentype';
+      default:
+        throw "Unknown font type";
+    }
   },
   
   woffToSfnt: function(data) {
@@ -120,6 +154,6 @@ var Worf = {
       sfntHeader = sfntHeader.concat(this.toUint32(entry.length)); // length
     }
     
-    return String.fromCharCode.apply(this, sfntHeader) + sfntData;
+    return(String.fromCharCode.apply(this, sfntHeader) + sfntData);
   }
 }
