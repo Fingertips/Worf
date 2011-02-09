@@ -49,11 +49,10 @@ Worf.Converter = {
 
   woffToSfntAsBase64: function(src, callback) {
     this.load(src, function(woff) {
-      var oldFunction = Worf.Util.Base64._utf8_encode;
-      Worf.Util.Base64._utf8_encode = function(data) { return data; }
-      var encoded = Worf.Util.Base64.encode(Worf.Converter.woffToSfnt(woff));
-      Worf.Util.Base64._utf8_encode = oldFunction;
-      callback(encoded, Worf.Converter.woffFlavor(woff));
+      callback(
+        Worf.Util.Base64.encode(Worf.Converter.woffToSfnt(woff)),
+        Worf.Converter.woffFlavor(woff)
+      );
     });
   },
 
