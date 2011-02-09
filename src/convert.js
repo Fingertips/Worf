@@ -1,18 +1,22 @@
 var Worf = {
-  define: function(url, rules) {
-    Worf.woffToSfntAsBase64(url, function(base64, format) {
-      var declaration = Worf.fontFaceDeclaration(rules, base64, format);
+  VERSION: "0.1.0",
+  
+  font_face: function(url, rules) {
+    Worf.Converter.woffToSfntAsBase64(url, function(base64, format) {
+      var declaration = Worf.Converter.fontFaceDeclaration(rules, base64, format);
       var style = document.createElement('style');
       style.innerHTML = declaration;
       document.head.appendChild(style);
     });
-  },
-  
+  }
+}
+
+Worf.Converter = {
   fontFaceDeclaration: function(rules, data, format) {
-    return "@font-face {                                                                                         \
+    return("@font-face {                                                                                         \
       src: url(//:) format('no404'), url(data:font/"+format+";charset=utf-8;base64,"+data+") format("+format+"); \
       "+rules+"                                                                                                  \
-    }";
+    }");
   },
   
   load: function(url, callback) {
@@ -45,11 +49,11 @@ var Worf = {
   
   woffToSfntAsBase64: function(src, callback) {
     this.load(src, function(woff) {
-      var oldFunction = JXG.Util.Base64._utf8_encode;
-      JXG.Util.Base64._utf8_encode = function(data) { return data; }
-      var encoded = JXG.Util.Base64.encode(Worf.woffToSfnt(woff));
-      JXG.Util.Base64._utf8_encode = oldFunction;
-      callback(encoded, Worf.woffFlavor(woff));
+      var oldFunction = Worf.Util.Base64._utf8_encode;
+      Worf.Util.Base64._utf8_encode = function(data) { return data; }
+      var encoded = Worf.Util.Base64.encode(Worf.Converter.woffToSfnt(woff));
+      Worf.Util.Base64._utf8_encode = oldFunction;
+      callback(encoded, Worf.Converter.woffFlavor(woff));
     });
   },
   
@@ -134,7 +138,7 @@ var Worf = {
       var woffDataCompressedSize = this.fromUint32(woffEntry.slice(8, 12)); // compSize
       
       if (sfntTableSize > woffDataCompressedSize) {
-        var unpacked = (new JXG.Util.Unzip(this.stringToByteArray(data.slice(woffDataOffset, woffDataOffset + woffDataCompressedSize)))).unzip();
+        var unpacked = (new Worf.Util.Unzip(this.stringToByteArray(data.slice(woffDataOffset, woffDataOffset + woffDataCompressedSize)))).unzip();
         sfntData += unpacked[0][0]; // Bad data breaks at this line
       } else {
         sfntData += this.cleanup(data.slice(woffDataOffset, woffDataOffset + woffDataCompressedSize));
@@ -157,3 +161,5 @@ var Worf = {
     return(String.fromCharCode.apply(this, sfntHeader) + sfntData);
   }
 }
+
+//= require "compressor"
