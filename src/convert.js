@@ -2,19 +2,30 @@ var Worf = {
   VERSION: "0.1.0",
   
   font_face: function(url, rules) {
-    Worf.Converter.woffToSfntAsBase64(url, function(base64, format) {
-      var declaration = Worf.Converter.fontFaceDeclaration(rules, base64, format);
-      var style = document.createElement('style');
-      style.innerHTML = declaration;
-      document.head.appendChild(style);
-    });
+    var sfnt = Worf.Caching.get(url);
+    if (!sfnt) {
+      Worf.Converter.woffToSfntAsBase64(url, function(base64, flavor) {
+        Worf.define_font_face(flavor, base64, rules);
+        Worf.Caching.set(url, flavor, base64);
+      });
+    } else {
+      sfnt.push(rules);
+      Worf.define_font_face.apply(this, sfnt);
+    }
+  },
+  
+  define_font_face: function(flavor, base64, rules) {
+    var declaration = Worf.Converter.fontFaceDeclaration(flavor, base64, rules);
+    var style = document.createElement('style');
+    style.innerHTML = declaration;
+    document.head.appendChild(style);
   }
 }
 
 Worf.Converter = {
-  fontFaceDeclaration: function(rules, data, format) {
+  fontFaceDeclaration: function(flavor, data, rules) {
     return("@font-face {                                                                                         \
-      src: url(//:) format('no404'), url(data:font/"+format+";charset=utf-8;base64,"+data+") format("+format+"); \
+      src: url(//:) format('no404'), url(data:font/"+flavor+";charset=utf-8;base64,"+data+") format("+flavor+"); \
       "+rules+"                                                                                                  \
     }");
   },
@@ -159,6 +170,29 @@ Worf.Converter = {
     }
     
     return(String.fromCharCode.apply(this, sfntHeader) + sfntData);
+  }
+}
+
+Worf.Caching = {
+  baseKey: function(url) {
+    return('worf.' + url);
+  },
+  
+  get: function(url) {
+    var baseKey = Worf.Caching.baseKey(url);
+    if (localStorage[baseKey + '.timestamp']) {
+      return([
+        localStorage[baseKey + '.flavor'],
+        localStorage[baseKey + '.base64']
+      ]);
+    }
+  },
+  
+  set: function(url, flavor, base64) {
+    var baseKey = Worf.Caching.baseKey(url);
+    localStorage[baseKey + '.timestamp'] = (new Date()).getTime();
+    localStorage[baseKey + '.flavor'] = flavor;
+    localStorage[baseKey + '.base64'] = base64;
   }
 }
 

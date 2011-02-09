@@ -1,2 +1,0 @@
-Moksi.describe('Worf', {
-});
