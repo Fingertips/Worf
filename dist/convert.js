@@ -12,6 +12,7 @@ var Worf = {
       sfnt.push(rules);
       Worf.define_font_face.apply(this, sfnt);
     }
+    Worf.Caching.cleanup();
   },
 
   define_font_face: function(flavor, base64, rules) {
@@ -187,6 +188,24 @@ Worf.Caching = {
     localStorage[baseKey + '.timestamp'] = (new Date()).getTime();
     localStorage[baseKey + '.flavor'] = flavor;
     localStorage[baseKey + '.base64'] = base64;
+  },
+
+  maxAge: 3600*24*1000,
+
+  cleanup: function() {
+    var match, now, timestamp, baseKey;
+    for (key in localStorage) {
+      if (match = key.match(/^worf\.(.*)\.timestamp$/)) {
+        now = (new Date()).getTime();
+        timestamp = parseInt(localStorage[key]);
+        if (now - timestamp > Worf.Caching.maxAge) {
+          baseKey = 'worf.'+match[1];
+          localStorage.removeItem(baseKey+'.timestamp');
+          localStorage.removeItem(baseKey+'.flavor');
+          localStorage.removeItem(baseKey+'.base64');
+        }
+      }
+    }
   }
 }
 
