@@ -1,7 +1,18 @@
 var Worf = {
   VERSION: "0.1.0",
   
-  font_face: function(url, rules) {
+  font_face: function() {
+    var length = arguments.length / 2;
+    var url, rules;
+    while(length--) {
+      url = arguments[length*2];
+      rules = arguments[length*2+1];
+      Worf._font_face(url, rules);
+    }
+    Worf.Caching.cleanup();
+  },
+  
+  _font_face: function(url, rules) {
     var sfnt = Worf.Caching.get(url);
     if (!sfnt) {
       Worf.Converter.woffToSfntAsBase64(url, function(base64, flavor) {
@@ -12,7 +23,6 @@ var Worf = {
       sfnt.push(rules);
       Worf.define_font_face.apply(this, sfnt);
     }
-    Worf.Caching.cleanup();
   },
   
   define_font_face: function(flavor, base64, rules) {
