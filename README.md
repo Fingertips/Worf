@@ -43,3 +43,16 @@ like 150 milliseconds.
 
 Because the conversion is cached in local storage Safari only needs to do
 it once.
+
+Using multiple fonts
+--------------------
+
+You can supply a list of fonts to load, which is faster than using separate
+statements:
+
+    WORF.font_face(
+      "impact.woff",
+      "font-family: 'Impact'; font-weight: normal; font-style: normal;",
+      "tahoma.woff",
+      "font-family: 'Tahoma'; font-weight: bold; font-style: normal;"
+    );
