@@ -1,6 +1,6 @@
 Moksi.describe('Worf', {
   'generates a font-face declaration to include in the styling': function() {
-    var declaration = Worf.Converter.fontFaceDeclaration("truetype", "DATA",
+    var declaration = WORF.Converter.fontFaceDeclaration("truetype", "DATA",
     "                                                      \
       font-family: 'Label';                                \
       font-weight: normal;                                 \

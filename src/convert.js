@@ -1,4 +1,4 @@
-var Worf = {
+var WORF = {
   VERSION: "0.1.0",
   
   font_face: function() {
@@ -7,33 +7,33 @@ var Worf = {
     while(length--) {
       url = arguments[length*2];
       rules = arguments[length*2+1];
-      Worf._font_face(url, rules);
+      WORF._font_face(url, rules);
     }
-    Worf.Caching.cleanup();
+    WORF.Caching.cleanup();
   },
   
   _font_face: function(url, rules) {
-    var sfnt = Worf.Caching.get(url);
+    var sfnt = WORF.Caching.get(url);
     if (!sfnt) {
-      Worf.Converter.woffToSfntAsBase64(url, function(base64, flavor) {
-        Worf.define_font_face(flavor, base64, rules);
-        Worf.Caching.set(url, flavor, base64);
+      WORF.Converter.woffToSfntAsBase64(url, function(base64, flavor) {
+        WORF.define_font_face(flavor, base64, rules);
+        WORF.Caching.set(url, flavor, base64);
       });
     } else {
       sfnt.push(rules);
-      Worf.define_font_face.apply(this, sfnt);
+      WORF.define_font_face.apply(this, sfnt);
     }
   },
   
   define_font_face: function(flavor, base64, rules) {
-    var declaration = Worf.Converter.fontFaceDeclaration(flavor, base64, rules);
+    var declaration = WORF.Converter.fontFaceDeclaration(flavor, base64, rules);
     var style = document.createElement('style');
     style.innerHTML = declaration;
     document.head.appendChild(style);
   }
 }
 
-Worf.Converter = {
+WORF.Converter = {
   fontFaceDeclaration: function(flavor, data, rules) {
     return("@font-face {                                                                                         \
       src: url(//:) format('no404'), url(data:font/"+flavor+";charset=utf-8;base64,"+data+") format("+flavor+"); \
@@ -71,11 +71,11 @@ Worf.Converter = {
   
   woffToSfntAsBase64: function(src, callback) {
     this.load(src, function(woff) {
-      var oldFunction = Worf.Util.Base64._utf8_encode;
-      Worf.Util.Base64._utf8_encode = function(data) { return data; }
-      var encoded = Worf.Util.Base64.encode(Worf.Converter.woffToSfnt(woff));
-      Worf.Util.Base64._utf8_encode = oldFunction;
-      callback(encoded, Worf.Converter.woffFlavor(woff));
+      var oldFunction = WORF.Util.Base64._utf8_encode;
+      WORF.Util.Base64._utf8_encode = function(data) { return data; }
+      var encoded = WORF.Util.Base64.encode(WORF.Converter.woffToSfnt(woff));
+      WORF.Util.Base64._utf8_encode = oldFunction;
+      callback(encoded, WORF.Converter.woffFlavor(woff));
     });
   },
   
@@ -160,7 +160,7 @@ Worf.Converter = {
       var woffDataCompressedSize = this.fromUint32(woffEntry.slice(8, 12)); // compSize
       
       if (sfntTableSize > woffDataCompressedSize) {
-        var unpacked = (new Worf.Util.Unzip(this.stringToByteArray(data.slice(woffDataOffset, woffDataOffset + woffDataCompressedSize)))).unzip();
+        var unpacked = (new WORF.Util.Unzip(this.stringToByteArray(data.slice(woffDataOffset, woffDataOffset + woffDataCompressedSize)))).unzip();
         sfntData += unpacked[0][0]; // Bad data breaks at this line
       } else {
         sfntData += this.cleanup(data.slice(woffDataOffset, woffDataOffset + woffDataCompressedSize));
@@ -184,13 +184,13 @@ Worf.Converter = {
   }
 }
 
-Worf.Caching = {
+WORF.Caching = {
   baseKey: function(url) {
     return('worf.' + url);
   },
   
   get: function(url) {
-    var baseKey = Worf.Caching.baseKey(url);
+    var baseKey = WORF.Caching.baseKey(url);
     if (localStorage[baseKey + '.timestamp']) {
       return([
         localStorage[baseKey + '.flavor'],
@@ -200,7 +200,7 @@ Worf.Caching = {
   },
   
   set: function(url, flavor, base64) {
-    var baseKey = Worf.Caching.baseKey(url);
+    var baseKey = WORF.Caching.baseKey(url);
     localStorage[baseKey + '.timestamp'] = (new Date()).getTime();
     localStorage[baseKey + '.flavor'] = flavor;
     localStorage[baseKey + '.base64'] = base64;
@@ -214,7 +214,7 @@ Worf.Caching = {
       if (match = key.match(/^worf\.(.*)\.timestamp$/)) {
         now = (new Date()).getTime();
         timestamp = parseInt(localStorage[key]);
-        if (now - timestamp > Worf.Caching.maxAge) {
+        if (now - timestamp > WORF.Caching.maxAge) {
           baseKey = 'worf.'+match[1];
           localStorage.removeItem(baseKey+'.timestamp');
           localStorage.removeItem(baseKey+'.flavor');

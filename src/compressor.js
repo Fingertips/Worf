@@ -1,5 +1,5 @@
-Worf.Util = {};
-Worf.Util.Unzip = function (barray){
+WORF.Util = {};
+WORF.Util.Unzip = function (barray){
     var outputArr = [],
         output = "",
         debug = false,
@@ -457,7 +457,7 @@ Worf.Util.Unzip = function (barray){
     return 0;
 };
 
-Worf.Util.Unzip.prototype.unzip = function() {
+WORF.Util.Unzip.prototype.unzip = function() {
     nextFile();
     return unzipped;
 };
@@ -661,7 +661,7 @@ function skipdir(){
 *  Base64 encoding / decoding
 *  @see <a href="http://www.webtoolkit.info/">http://www.webtoolkit.info/</A>
 */
-Worf.Util.Base64 = {
+WORF.Util.Base64 = {
   _keyStr : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
   
   encode : function (input) {

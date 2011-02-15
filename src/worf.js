@@ -1,10 +1,10 @@
-var Worf = {
+var WORF = {
   powers: [16777216, 65536, 256, 1],
   debug: false,  
   
   use: function(src) {
     this.load(src, function(data) {
-      Worf.decode(data);
+      WORF.decode(data);
     });
   },
   

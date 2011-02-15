@@ -6,7 +6,7 @@ of the font and now it doesn't work in Safari!
 
     <script type="text/javascript" src="convert.min.js"></script>
     <script type="text/javascript">
-      Worf.font_face('impact.woff', "\
+      WORF.font_face('impact.woff', "\
         font-family: 'Impact';       \
         font-weight: normal;         \
         font-style: normal;          \
