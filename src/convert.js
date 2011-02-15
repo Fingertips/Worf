@@ -2,14 +2,16 @@ var WORF = {
   VERSION: "0.1.0",
   
   font_face: function() {
-    var length = arguments.length / 2;
-    var url, rules;
-    while(length--) {
-      url = arguments[length*2];
-      rules = arguments[length*2+1];
-      WORF._font_face(url, rules);
+    if (WORF.worfable()) {
+      var length = arguments.length / 2;
+      var url, rules;
+      while(length--) {
+        url = arguments[length*2];
+        rules = arguments[length*2+1];
+        WORF._font_face(url, rules);
+      }
+      WORF.Caching.cleanup();
     }
-    WORF.Caching.cleanup();
   },
   
   _font_face: function(url, rules) {
@@ -30,6 +32,27 @@ var WORF = {
     var style = document.createElement('style');
     style.innerHTML = declaration;
     document.head.appendChild(style);
+  },
+  
+  worfable: function() {
+    var ua = navigator.userAgent, version;
+    if (version = ua.match(/Chrome\/(\d+\.\d+\.\d+\.\d+)/)) {
+      return version[1] >= '4.0.249.4' && version[1] < '5.0';
+    }
+    if (version = ua.match(/Safari\/(\d+\.\d+)/)) {
+      if (ua.indexOf('(iPhone') > -1 || ua.indexOf('(iPad') > -1 || ua.indexOf('(iPod') > -1) {
+        return version[1] >= '533.17.9';
+      } else {
+        return version[1] >= '525.13';
+      }
+    }
+    if (/Opera/.test({}.toString.call(window.opera))) {
+      return opera.version() >= '10.00' && opera.version() < '11.00';
+    }
+    if (version = ua.match(/rv:(\d+\.\d+\.\d+)[^b].*Gecko\//)) {
+      return parsed[1] >= '1.9.1';   
+    }
+    return false;
   }
 }
 
