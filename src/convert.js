@@ -94,11 +94,7 @@ WORF.Converter = {
   
   woffToSfntAsBase64: function(src, callback) {
     this.load(src, function(woff) {
-      var oldFunction = WORF.Util.Base64._utf8_encode;
-      WORF.Util.Base64._utf8_encode = function(data) { return data; }
-      var encoded = WORF.Util.Base64.encode(WORF.Converter.woffToSfnt(woff));
-      WORF.Util.Base64._utf8_encode = oldFunction;
-      callback(encoded, WORF.Converter.woffFlavor(woff));
+      callback(btoa(WORF.Converter.woffToSfnt(woff)), WORF.Converter.woffFlavor(woff));
     });
   },
   
